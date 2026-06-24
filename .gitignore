@@ -32,8 +32,8 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 
-# Claude Code local config (permissions etc.)
-.claude
+# Local editor / tooling config
+.vscode-local/
 
 # Python / backend engine
 .venv/
