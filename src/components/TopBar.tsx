@@ -1,15 +1,39 @@
 import { useState, useEffect } from 'react';
 import { Bell, RefreshCw, Globe, Activity } from 'lucide-react';
 import { Page } from '../App';
+import { useLang, pick, locale } from '../i18n';
 
-const pageTitles: Record<Page, { title: string; subtitle: string }> = {
-  dashboard: { title: 'Dashboard', subtitle: 'Обзор системы мониторинга' },
-  analysis: { title: 'Анализ видео', subtitle: 'Multimodal AI Detection' },
-  queue: { title: 'Очередь проверки', subtitle: 'Управление задачами' },
-  connections: { title: 'Карта связей', subtitle: 'Граф подозрительных связей' },
-  'scam-dna': { title: 'Scam DNA', subtitle: 'Цифровой отпечаток риска' },
-  timeline: { title: 'Evidence Timeline', subtitle: 'Хронология доказательств' },
-  settings: { title: 'Настройки', subtitle: 'Конфигурация системы' },
+type Titles = { title: string; subtitle: string };
+
+const pageTitles: Record<Page, { en: Titles; ru: Titles }> = {
+  dashboard: {
+    en: { title: 'Dashboard', subtitle: 'Monitoring overview' },
+    ru: { title: 'Дашборд', subtitle: 'Обзор системы мониторинга' },
+  },
+  analysis: {
+    en: { title: 'Video analysis', subtitle: 'Multimodal AI Detection' },
+    ru: { title: 'Анализ видео', subtitle: 'Multimodal AI Detection' },
+  },
+  queue: {
+    en: { title: 'Review queue', subtitle: 'Task management' },
+    ru: { title: 'Очередь проверки', subtitle: 'Управление задачами' },
+  },
+  connections: {
+    en: { title: 'Connections', subtitle: 'Graph of suspicious links' },
+    ru: { title: 'Карта связей', subtitle: 'Граф подозрительных связей' },
+  },
+  'scam-dna': {
+    en: { title: 'Scam DNA', subtitle: 'Digital risk fingerprint' },
+    ru: { title: 'Scam DNA', subtitle: 'Цифровой отпечаток риска' },
+  },
+  timeline: {
+    en: { title: 'Evidence Timeline', subtitle: 'Chronology of evidence' },
+    ru: { title: 'Evidence Timeline', subtitle: 'Хронология доказательств' },
+  },
+  settings: {
+    en: { title: 'Settings', subtitle: 'System configuration' },
+    ru: { title: 'Настройки', subtitle: 'Конфигурация системы' },
+  },
 };
 
 interface TopBarProps {
@@ -18,6 +42,7 @@ interface TopBarProps {
 }
 
 export default function TopBar({ currentPage, onNavigate }: TopBarProps) {
+  const { lang, toggle } = useLang();
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
@@ -25,7 +50,7 @@ export default function TopBar({ currentPage, onNavigate }: TopBarProps) {
     return () => clearInterval(timer);
   }, []);
 
-  const { title, subtitle } = pageTitles[currentPage];
+  const { title, subtitle } = pageTitles[currentPage][lang];
 
   return (
     <header className="h-14 bg-[#090912] border-b border-white/[0.06] flex items-center px-5 gap-4 flex-shrink-0">
@@ -40,17 +65,22 @@ export default function TopBar({ currentPage, onNavigate }: TopBarProps) {
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-green-500/10 border border-green-500/20">
           <Activity className="w-3 h-3 text-green-400" />
-          <span className="text-xs font-medium text-green-400">Monitoring Active</span>
+          <span className="text-xs font-medium text-green-400">{pick(lang, 'Monitoring Active', 'Мониторинг активен')}</span>
         </div>
 
-        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.07]">
+        {/* Language switcher */}
+        <button
+          onClick={toggle}
+          title={pick(lang, 'Switch to Russian', 'Переключить на английский')}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.07] hover:bg-white/[0.08] hover:border-violet-500/40 transition-colors"
+        >
           <Globe className="w-3 h-3 text-slate-400" />
-          <span className="text-xs text-slate-400">RU</span>
-        </div>
+          <span className="text-xs font-semibold text-slate-300">{lang.toUpperCase()}</span>
+        </button>
 
         <div className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.07]">
           <span className="text-xs font-mono text-slate-400">
-            {time.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            {time.toLocaleTimeString(locale(lang), { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
           </span>
         </div>
 
@@ -64,7 +94,7 @@ export default function TopBar({ currentPage, onNavigate }: TopBarProps) {
           className="btn btn-primary text-xs"
         >
           <RefreshCw className="w-3 h-3" />
-          Новый анализ
+          {pick(lang, 'New analysis', 'Новый анализ')}
         </button>
       </div>
     </header>

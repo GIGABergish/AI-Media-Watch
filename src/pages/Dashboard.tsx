@@ -5,9 +5,10 @@ import {
 } from 'recharts';
 import { TrendingUp, AlertTriangle, Eye, Network, ArrowUpRight, Flame, Clock, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { demoCases, dashboardStats } from '../data/cases';
+import { useCases, useStats } from '../data/useData';
 import { DemoCase } from '../types';
-import { getRiskBg, getRiskLabel, getRiskColor, formatDate } from '../lib/utils';
+import { getRiskBg, getRiskColor, formatDate } from '../lib/utils';
+import { useLang, pick, riskLabel } from '../i18n';
 
 interface DashboardProps {
   onNavigateAnalysis: () => void;
@@ -30,49 +31,6 @@ function AnimatedNumber({ target, duration = 1500 }: { target: number; duration?
   return <>{value.toLocaleString('ru-RU')}</>;
 }
 
-const kpis = [
-  {
-    label: 'Проанализировано видео',
-    value: 1248,
-    icon: Eye,
-    color: 'text-blue-400',
-    bg: 'bg-blue-500/10',
-    border: 'border-blue-500/20',
-    delta: '+142 за 7 дней',
-    positive: true,
-  },
-  {
-    label: 'Высокий риск',
-    value: 87,
-    icon: AlertTriangle,
-    color: 'text-red-400',
-    bg: 'bg-red-500/10',
-    border: 'border-red-500/20',
-    delta: '+12 за 7 дней',
-    positive: false,
-  },
-  {
-    label: 'Требует проверки',
-    value: 146,
-    icon: Clock,
-    color: 'text-orange-400',
-    bg: 'bg-orange-500/10',
-    border: 'border-orange-500/20',
-    delta: '+23 за 7 дней',
-    positive: false,
-  },
-  {
-    label: 'Выявлено кластеров',
-    value: 12,
-    icon: Network,
-    color: 'text-violet-400',
-    bg: 'bg-violet-500/10',
-    border: 'border-violet-500/20',
-    delta: '+3 за 7 дней',
-    positive: false,
-  },
-];
-
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
@@ -88,6 +46,53 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export default function Dashboard({ onNavigateAnalysis, onSelectCase }: DashboardProps) {
+  const { lang } = useLang();
+  const demoCases = useCases();
+  const dashboardStats = useStats();
+
+  const kpis = [
+    {
+      label: pick(lang, 'Videos analyzed', 'Проанализировано видео'),
+      value: 1248,
+      icon: Eye,
+      color: 'text-blue-400',
+      bg: 'bg-blue-500/10',
+      border: 'border-blue-500/20',
+      delta: pick(lang, '+142 in 7 days', '+142 за 7 дней'),
+      positive: true,
+    },
+    {
+      label: pick(lang, 'High risk', 'Высокий риск'),
+      value: 87,
+      icon: AlertTriangle,
+      color: 'text-red-400',
+      bg: 'bg-red-500/10',
+      border: 'border-red-500/20',
+      delta: pick(lang, '+12 in 7 days', '+12 за 7 дней'),
+      positive: false,
+    },
+    {
+      label: pick(lang, 'Needs review', 'Требует проверки'),
+      value: 146,
+      icon: Clock,
+      color: 'text-orange-400',
+      bg: 'bg-orange-500/10',
+      border: 'border-orange-500/20',
+      delta: pick(lang, '+23 in 7 days', '+23 за 7 дней'),
+      positive: false,
+    },
+    {
+      label: pick(lang, 'Clusters detected', 'Выявлено кластеров'),
+      value: 12,
+      icon: Network,
+      color: 'text-violet-400',
+      bg: 'bg-violet-500/10',
+      border: 'border-violet-500/20',
+      delta: pick(lang, '+3 in 7 days', '+3 за 7 дней'),
+      positive: false,
+    },
+  ];
+
   const recentCases = [...demoCases].sort((a, b) => b.riskScore - a.riskScore).slice(0, 4);
 
   return (
@@ -133,12 +138,12 @@ export default function Dashboard({ onNavigateAnalysis, onSelectCase }: Dashboar
         >
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="text-sm font-semibold text-white">Активность за 7 дней</div>
-              <div className="text-xs text-slate-500">Анализ и выявленные риски</div>
+              <div className="text-sm font-semibold text-white">{pick(lang, 'Activity over 7 days', 'Активность за 7 дней')}</div>
+              <div className="text-xs text-slate-500">{pick(lang, 'Analysis and detected risks', 'Анализ и выявленные риски')}</div>
             </div>
             <div className="flex items-center gap-3 text-xs">
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-400" /><span className="text-slate-400">Проанализировано</span></div>
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-red-400" /><span className="text-slate-400">Высокий риск</span></div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-400" /><span className="text-slate-400">{pick(lang, 'Analyzed', 'Проанализировано')}</span></div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-red-400" /><span className="text-slate-400">{pick(lang, 'High risk', 'Высокий риск')}</span></div>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={180}>
@@ -157,8 +162,8 @@ export default function Dashboard({ onNavigateAnalysis, onSelectCase }: Dashboar
               <XAxis dataKey="day" tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
-              <Area type="monotone" dataKey="analyzed" name="Проанализировано" stroke="#3b82f6" strokeWidth={2} fill="url(#colorAnalyzed)" />
-              <Area type="monotone" dataKey="highRisk" name="Высокий риск" stroke="#ef4444" strokeWidth={2} fill="url(#colorRisk)" />
+              <Area type="monotone" dataKey="analyzed" name={pick(lang, 'Analyzed', 'Проанализировано')} stroke="#3b82f6" strokeWidth={2} fill="url(#colorAnalyzed)" />
+              <Area type="monotone" dataKey="highRisk" name={pick(lang, 'High risk', 'Высокий риск')} stroke="#ef4444" strokeWidth={2} fill="url(#colorRisk)" />
             </AreaChart>
           </ResponsiveContainer>
         </motion.div>
@@ -170,8 +175,8 @@ export default function Dashboard({ onNavigateAnalysis, onSelectCase }: Dashboar
           transition={{ delay: 0.42 }}
           className="card p-4"
         >
-          <div className="text-sm font-semibold text-white mb-1">Категории нарушений</div>
-          <div className="text-xs text-slate-500 mb-3">Распределение по типам</div>
+          <div className="text-sm font-semibold text-white mb-1">{pick(lang, 'Violation categories', 'Категории нарушений')}</div>
+          <div className="text-xs text-slate-500 mb-3">{pick(lang, 'Distribution by type', 'Распределение по типам')}</div>
           <ResponsiveContainer width="100%" height={140}>
             <PieChart>
               <Pie
@@ -225,15 +230,15 @@ export default function Dashboard({ onNavigateAnalysis, onSelectCase }: Dashboar
           transition={{ delay: 0.48 }}
           className="card p-4"
         >
-          <div className="text-sm font-semibold text-white mb-1">Распределение риска</div>
-          <div className="text-xs text-slate-500 mb-3">По диапазонам Risk Score</div>
+          <div className="text-sm font-semibold text-white mb-1">{pick(lang, 'Risk distribution', 'Распределение риска')}</div>
+          <div className="text-xs text-slate-500 mb-3">{pick(lang, 'By Risk Score ranges', 'По диапазонам Risk Score')}</div>
           <ResponsiveContainer width="100%" height={150}>
             <BarChart data={dashboardStats.riskDistribution} barSize={24}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
               <XAxis dataKey="range" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="count" name="Видео" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="count" name={pick(lang, 'Videos', 'Видео')} radius={[4, 4, 0, 0]}>
                 {dashboardStats.riskDistribution.map((entry, index) => {
                   const colors = ['#22c55e', '#84cc16', '#eab308', '#f97316', '#ef4444'];
                   return <Cell key={index} fill={colors[index]} opacity={0.8} />;
@@ -251,9 +256,9 @@ export default function Dashboard({ onNavigateAnalysis, onSelectCase }: Dashboar
           className="card p-4 col-span-1"
         >
           <div className="flex items-center justify-between mb-3">
-            <div className="text-sm font-semibold text-white">Последние видео</div>
+            <div className="text-sm font-semibold text-white">{pick(lang, 'Latest videos', 'Последние видео')}</div>
             <button onClick={onNavigateAnalysis} className="text-xs text-violet-400 hover:text-violet-300 flex items-center gap-1">
-              Все <ChevronRight className="w-3 h-3" />
+              {pick(lang, 'All', 'Все')} <ChevronRight className="w-3 h-3" />
             </button>
           </div>
           <div className="space-y-2">
@@ -271,7 +276,7 @@ export default function Dashboard({ onNavigateAnalysis, onSelectCase }: Dashboar
                   <div className="text-[10px] text-slate-500">{c.platform} · {formatDate(c.uploadDate)}</div>
                 </div>
                 <span className={`badge border text-[10px] ${getRiskBg(c.riskLevel)}`}>
-                  {getRiskLabel(c.riskLevel)}
+                  {riskLabel(c.riskLevel, lang)}
                 </span>
               </div>
             ))}
@@ -293,15 +298,19 @@ export default function Dashboard({ onNavigateAnalysis, onSelectCase }: Dashboar
             <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
               <div className="text-xs font-semibold text-red-400 mb-1">Telegram Casino Funnel v2</div>
               <div className="text-[11px] text-slate-400 leading-relaxed">
-                Новый паттерн: короткие видео 15–30 сек с промокодом, перенаправление через bio-link в Telegram
+                {pick(
+                  lang,
+                  'New pattern: short 15–30 sec videos with a promo code, redirecting via bio-link to Telegram',
+                  'Новый паттерн: короткие видео 15–30 сек с промокодом, перенаправление через bio-link в Telegram',
+                )}
               </div>
             </div>
             <div className="space-y-2">
               {[
-                { label: 'Совпадений за 7 дней', value: '34 видео', color: 'text-red-400' },
-                { label: 'Платформы', value: 'Instagram, TikTok', color: 'text-orange-400' },
-                { label: 'Риск паттерна', value: '89 / 100', color: 'text-red-400' },
-                { label: 'Новых аккаунтов', value: '7 выявлено', color: 'text-yellow-400' },
+                { label: pick(lang, 'Matches in 7 days', 'Совпадений за 7 дней'), value: pick(lang, '34 videos', '34 видео'), color: 'text-red-400' },
+                { label: pick(lang, 'Platforms', 'Платформы'), value: 'Instagram, TikTok', color: 'text-orange-400' },
+                { label: pick(lang, 'Pattern risk', 'Риск паттерна'), value: '89 / 100', color: 'text-red-400' },
+                { label: pick(lang, 'New accounts', 'Новых аккаунтов'), value: pick(lang, '7 detected', '7 выявлено'), color: 'text-yellow-400' },
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between text-xs">
                   <span className="text-slate-500">{item.label}</span>
@@ -313,7 +322,7 @@ export default function Dashboard({ onNavigateAnalysis, onSelectCase }: Dashboar
               onClick={onNavigateAnalysis}
               className="w-full btn btn-ghost text-xs justify-center"
             >
-              Открыть анализ
+              {pick(lang, 'Open analysis', 'Открыть анализ')}
               <ArrowUpRight className="w-3 h-3" />
             </button>
           </div>

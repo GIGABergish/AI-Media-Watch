@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Analysis from './pages/Analysis';
@@ -7,14 +7,25 @@ import TimelinePage from './pages/Timeline';
 import ConnectionsPage from './pages/Connections';
 import QueuePage from './pages/Queue';
 import SettingsPage from './pages/SettingsPage';
-import { demoCases } from './data/cases';
+import { useCases } from './data/useData';
+import { useLang } from './i18n';
 import { DemoCase } from './types';
 
 export type Page = 'dashboard' | 'analysis' | 'queue' | 'connections' | 'scam-dna' | 'timeline' | 'settings';
 
 function App() {
+  const cases = useCases();
+  const { lang } = useLang();
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
-  const [selectedCase, setSelectedCase] = useState<DemoCase>(demoCases[0]);
+  const [selectedCase, setSelectedCase] = useState<DemoCase>(cases[0]);
+
+  // When the language switches, remap a selected DEMO case to its counterpart
+  // in the new language; leave ad-hoc live-analysis results untouched.
+  useEffect(() => {
+    const match = cases.find((c) => c.id === selectedCase.id);
+    if (match && match !== selectedCase) setSelectedCase(match);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
 
   const handleSelectCase = (c: DemoCase, page: Page = 'analysis') => {
     setSelectedCase(c);

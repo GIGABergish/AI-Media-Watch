@@ -4,9 +4,10 @@ import {
   CheckCircle, AlertTriangle, Loader2, Shield, ExternalLink, Clock,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { demoCases } from '../data/cases';
+import { useCases } from '../data/useData';
 import { DemoCase, EvidenceType } from '../types';
-import { getRiskBg, getRiskColor, getRiskLabel, getRiskScoreGradient, getSourceColor } from '../lib/utils';
+import { getRiskBg, getRiskColor } from '../lib/utils';
+import { useLang, pick, riskLabel } from '../i18n';
 import { analyzeFile, AnalysisMeta } from '../lib/api';
 import { USE_BACKEND } from '../config';
 
@@ -19,12 +20,12 @@ interface AnalysisProps {
 }
 
 const ANALYSIS_STEPS = [
-  { label: 'Извлечение аудио', icon: Mic, duration: 700 },
-  { label: 'Анализ речи', icon: Mic, duration: 900 },
-  { label: 'OCR текста', icon: Type, duration: 800 },
-  { label: 'Анализ визуальных маркеров', icon: Eye, duration: 1000 },
-  { label: 'Расчёт Risk Score', icon: Shield, duration: 700 },
-  { label: 'Формирование объяснения', icon: CheckCircle, duration: 600 },
+  { en: 'Audio extraction', ru: 'Извлечение аудио', icon: Mic, duration: 700 },
+  { en: 'Speech analysis', ru: 'Анализ речи', icon: Mic, duration: 900 },
+  { en: 'Text OCR', ru: 'OCR текста', icon: Type, duration: 800 },
+  { en: 'Visual-marker analysis', ru: 'Анализ визуальных маркеров', icon: Eye, duration: 1000 },
+  { en: 'Risk Score computation', ru: 'Расчёт Risk Score', icon: Shield, duration: 700 },
+  { en: 'Explanation synthesis', ru: 'Формирование объяснения', icon: CheckCircle, duration: 600 },
 ];
 
 const evidenceIcons: Record<EvidenceType, React.ElementType> = {
@@ -54,6 +55,8 @@ function ConfidenceBar({ value, color }: { value: number; color: string }) {
 }
 
 export default function Analysis({ selectedCase, onSelectCase, onViewScamDNA, onViewTimeline, onViewConnections }: AnalysisProps) {
+  const { lang } = useLang();
+  const demoCases = useCases();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(-1);
   const [showResults, setShowResults] = useState(true);
@@ -104,13 +107,13 @@ export default function Analysis({ selectedCase, onSelectCase, onViewScamDNA, on
     } else {
       onSelectCase(demoCases[0]);
       const reason = result.reason instanceof Error ? result.reason.message : String(result.reason);
-      setError(`Бэкенд недоступен — показан demo-кейс. ${reason}`);
+      setError(reason);
     }
 
     setIsAnalyzing(false);
     setShowResults(true);
     setAnalysisStep(-1);
-  }, [onSelectCase, runStepAnimation]);
+  }, [onSelectCase, runStepAnimation, demoCases]);
 
   const handleFile = useCallback((file: File | undefined) => {
     if (!file || !file.type.startsWith('video/')) return;
@@ -119,7 +122,7 @@ export default function Analysis({ selectedCase, onSelectCase, onViewScamDNA, on
     } else {
       runAnalysis(demoCases[0]);
     }
-  }, [analyzeRealFile, runAnalysis]);
+  }, [analyzeRealFile, runAnalysis, demoCases]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -127,11 +130,24 @@ export default function Analysis({ selectedCase, onSelectCase, onViewScamDNA, on
     handleFile(e.dataTransfer.files[0]);
   }, [handleFile]);
 
-  const riskGradient = getRiskScoreGradient(selectedCase.riskScore);
   const scoreColor = selectedCase.riskLevel === 'critical' ? '#ef4444'
     : selectedCase.riskLevel === 'high' ? '#f97316'
     : selectedCase.riskLevel === 'medium' ? '#eab308'
     : '#22c55e';
+
+  const modules = [
+    { label: 'Scam DNA', desc: pick(lang, 'Digital risk fingerprint', 'Цифровой отпечаток риска'), action: onViewScamDNA, color: 'text-violet-400' },
+    { label: 'Evidence Timeline', desc: pick(lang, 'Chronology of evidence', 'Хронология доказательств'), action: onViewTimeline, color: 'text-cyan-400' },
+    { label: pick(lang, 'Connections', 'Карта связей'), desc: pick(lang, `Cluster of ${selectedCase.connections.clusterSize} posts`, `Кластер из ${selectedCase.connections.clusterSize} публикаций`), action: onViewConnections, color: 'text-blue-400' },
+  ];
+
+  const formula = [
+    { en: 'Text & speech', ru: 'Текст и речь', weight: 35 },
+    { en: 'Visual', ru: 'Визуальные', weight: 25 },
+    { en: 'Metadata', ru: 'Метаданные', weight: 15 },
+    { en: 'Behavior', ru: 'Поведение', weight: 15 },
+    { en: 'Similarity', ru: 'Похожесть', weight: 10 },
+  ];
 
   return (
     <div className="grid grid-cols-5 gap-4 h-full">
@@ -161,22 +177,24 @@ export default function Analysis({ selectedCase, onSelectCase, onViewScamDNA, on
           <div className="w-10 h-10 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center mx-auto mb-3">
             <Upload className="w-5 h-5 text-violet-400" />
           </div>
-          <div className="text-sm font-medium text-white mb-1">Загрузить видео</div>
-          <div className="text-xs text-slate-500">MP4, MOV, AVI · до 500 МБ</div>
-          <div className="text-xs text-slate-600 mt-1">или перетащите файл сюда</div>
+          <div className="text-sm font-medium text-white mb-1">{pick(lang, 'Upload video', 'Загрузить видео')}</div>
+          <div className="text-xs text-slate-500">{pick(lang, 'MP4, MOV, AVI · up to 500 MB', 'MP4, MOV, AVI · до 500 МБ')}</div>
+          <div className="text-xs text-slate-600 mt-1">{pick(lang, 'or drag & drop a file here', 'или перетащите файл сюда')}</div>
         </div>
 
         {/* Backend unavailable notice */}
         {error && (
           <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-red-500/[0.06] border border-red-500/20">
             <AlertTriangle className="w-3.5 h-3.5 text-red-400 mt-0.5 flex-shrink-0" />
-            <p className="text-[11px] text-red-300/90 leading-relaxed break-words">{error}</p>
+            <p className="text-[11px] text-red-300/90 leading-relaxed break-words">
+              {pick(lang, 'Backend unavailable — showing a demo case.', 'Бэкенд недоступен — показан demo-кейс.')} {error}
+            </p>
           </div>
         )}
 
         {/* Demo Cases */}
         <div className="card p-4">
-          <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Demo кейсы</div>
+          <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">{pick(lang, 'Demo cases', 'Demo кейсы')}</div>
           <div className="space-y-2">
             {demoCases.map((c) => (
               <button
@@ -204,12 +222,8 @@ export default function Analysis({ selectedCase, onSelectCase, onViewScamDNA, on
         {/* Quick Nav */}
         {showResults && (
           <div className="card p-4 space-y-2">
-            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Модули анализа</div>
-            {[
-              { label: 'Scam DNA', desc: 'Цифровой отпечаток риска', action: onViewScamDNA, color: 'text-violet-400' },
-              { label: 'Evidence Timeline', desc: 'Хронология доказательств', action: onViewTimeline, color: 'text-cyan-400' },
-              { label: 'Карта связей', desc: `Кластер из ${selectedCase.connections.clusterSize} публикаций`, action: onViewConnections, color: 'text-blue-400' },
-            ].map((item) => (
+            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">{pick(lang, 'Analysis modules', 'Модули анализа')}</div>
+            {modules.map((item) => (
               <button
                 key={item.label}
                 onClick={item.action}
@@ -243,7 +257,7 @@ export default function Analysis({ selectedCase, onSelectCase, onViewScamDNA, on
                   <Loader2 className="w-4 h-4 text-violet-400 animate-spin" />
                 </div>
                 <div>
-                  <div className="text-sm font-semibold text-white">Анализ видео...</div>
+                  <div className="text-sm font-semibold text-white">{pick(lang, 'Analyzing video...', 'Анализ видео...')}</div>
                   <div className="text-xs text-slate-500">Multimodal AI Pipeline</div>
                 </div>
               </div>
@@ -252,8 +266,9 @@ export default function Analysis({ selectedCase, onSelectCase, onViewScamDNA, on
                   const StepIcon = step.icon;
                   const isDone = i < analysisStep;
                   const isCurrent = i === analysisStep;
+                  const stepLabel = pick(lang, step.en, step.ru);
                   return (
-                    <div key={step.label} className={`flex items-center gap-3 transition-all duration-300 ${i > analysisStep ? 'opacity-30' : 'opacity-100'}`}>
+                    <div key={step.en} className={`flex items-center gap-3 transition-all duration-300 ${i > analysisStep ? 'opacity-30' : 'opacity-100'}`}>
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${isDone ? 'bg-green-500/20 border border-green-500/40' : isCurrent ? 'bg-violet-500/20 border border-violet-500/40' : 'bg-white/[0.05] border border-white/[0.1]'}`}>
                         {isDone
                           ? <CheckCircle className="w-3 h-3 text-green-400" />
@@ -263,7 +278,7 @@ export default function Analysis({ selectedCase, onSelectCase, onViewScamDNA, on
                         }
                       </div>
                       <span className={`text-xs font-medium transition-colors ${isDone ? 'text-green-400' : isCurrent ? 'text-white' : 'text-slate-600'}`}>
-                        {step.label}
+                        {stepLabel}
                       </span>
                       {isCurrent && (
                         <div className="flex-1 h-1 bg-white/[0.06] rounded-full overflow-hidden ml-2">
@@ -300,7 +315,7 @@ export default function Analysis({ selectedCase, onSelectCase, onViewScamDNA, on
                     </span>
                     <span className="flex items-center gap-1 text-slate-400 font-mono">
                       <Clock className="w-2.5 h-2.5" />
-                      {meta.elapsedMs} мс
+                      {meta.elapsedMs} {pick(lang, 'ms', 'мс')}
                     </span>
                     {meta.lanesRun.map((lane) => (
                       <span key={lane} className="px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.08] text-slate-400 font-mono">
@@ -352,7 +367,7 @@ export default function Analysis({ selectedCase, onSelectCase, onViewScamDNA, on
                         <div className="text-xs text-slate-500 mt-0.5">{selectedCase.platform} · {selectedCase.duration}</div>
                       </div>
                       <span className={`badge border text-xs flex-shrink-0 ${getRiskBg(selectedCase.riskLevel)}`}>
-                        {getRiskLabel(selectedCase.riskLevel)} риск
+                        {riskLabel(selectedCase.riskLevel, lang)} {pick(lang, 'risk', 'риск')}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 mb-3">
@@ -362,7 +377,7 @@ export default function Analysis({ selectedCase, onSelectCase, onViewScamDNA, on
                     <p className="text-xs text-slate-400 leading-relaxed">{selectedCase.description}</p>
                     <div className="mt-3 p-2.5 rounded-lg bg-yellow-500/8 border border-yellow-500/15">
                       <p className="text-[10px] text-yellow-300/80 leading-relaxed">
-                        <span className="font-semibold">Главный сигнал:</span> {selectedCase.mainReason}
+                        <span className="font-semibold">{pick(lang, 'Main signal:', 'Главный сигнал:')}</span> {selectedCase.mainReason}
                       </p>
                     </div>
                   </div>
@@ -370,18 +385,12 @@ export default function Analysis({ selectedCase, onSelectCase, onViewScamDNA, on
 
                 {/* Score Breakdown */}
                 <div className="mt-4 pt-4 border-t border-white/[0.06]">
-                  <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-3">Формула Risk Score</div>
+                  <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-3">{pick(lang, 'Risk Score formula', 'Формула Risk Score')}</div>
                   <div className="grid grid-cols-5 gap-2">
-                    {[
-                      { label: 'Текст и речь', weight: 35 },
-                      { label: 'Визуальные', weight: 25 },
-                      { label: 'Метаданные', weight: 15 },
-                      { label: 'Поведение', weight: 15 },
-                      { label: 'Похожесть', weight: 10 },
-                    ].map((item) => (
-                      <div key={item.label} className="text-center">
+                    {formula.map((item) => (
+                      <div key={item.en} className="text-center">
                         <div className="text-[10px] font-mono text-violet-400">{item.weight}%</div>
-                        <div className="text-[9px] text-slate-600 leading-tight mt-0.5">{item.label}</div>
+                        <div className="text-[9px] text-slate-600 leading-tight mt-0.5">{pick(lang, item.en, item.ru)}</div>
                       </div>
                     ))}
                   </div>
@@ -435,7 +444,9 @@ export default function Analysis({ selectedCase, onSelectCase, onViewScamDNA, on
                 <div className="flex items-start gap-2">
                   <Shield className="w-3.5 h-3.5 text-blue-400 mt-0.5 flex-shrink-0" />
                   <p className="text-[10px] text-blue-300/80 leading-relaxed">
-                    <span className="font-semibold">AI Media Watch</span> не выносит автоматических юридических решений. Система помогает приоритизировать контент для ручной проверки, объясняя найденные признаки риска. Результат требует верификации специалистом.
+                    <span className="font-semibold">AI Media Watch</span> {pick(lang,
+                      'does not issue automated legal decisions. It helps prioritize content for manual review by explaining the risk signals it finds. Every result requires verification by a specialist.',
+                      'не выносит автоматических юридических решений. Система помогает приоритизировать контент для ручной проверки, объясняя найденные признаки риска. Результат требует верификации специалистом.')}
                   </p>
                 </div>
               </div>

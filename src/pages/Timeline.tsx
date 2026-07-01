@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Zap, Mic, Type, Eye, Database, Activity, Filter } from 'lucide-react';
 import { DemoCase, SignalSource } from '../types';
-import { getRiskBg, getRiskColor, getRiskLabel, getSourceColor } from '../lib/utils';
+import { getRiskBg, getRiskColor, getSourceColor } from '../lib/utils';
+import { useLang, pick, riskLabel, sourceLabel } from '../i18n';
 
 interface TimelinePageProps {
   selectedCase: DemoCase;
@@ -20,6 +21,7 @@ const sourceIcons: Record<SignalSource, React.ElementType> = {
 const ALL_SOURCES: SignalSource[] = ['OCR', 'Audio', 'Visual', 'Metadata', 'Behavior'];
 
 export default function TimelinePage({ selectedCase, onBack }: TimelinePageProps) {
+  const { lang } = useLang();
   const [activeFilter, setActiveFilter] = useState<SignalSource | 'all'>('all');
 
   const filtered = activeFilter === 'all'
@@ -40,8 +42,8 @@ export default function TimelinePage({ selectedCase, onBack }: TimelinePageProps
             <Zap className="w-5 h-5 text-cyan-400" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-white">Evidence Timeline</h2>
-            <p className="text-xs text-slate-500">Хронология обнаруженных сигналов</p>
+            <h2 className="text-base font-bold text-white">{pick(lang, 'Evidence Timeline', 'Хронология доказательств')}</h2>
+            <p className="text-xs text-slate-500">{pick(lang, 'Chronology of detected signals', 'Хронология обнаруженных сигналов')}</p>
           </div>
         </div>
         <div className="ml-auto text-xs text-slate-500">
@@ -51,7 +53,7 @@ export default function TimelinePage({ selectedCase, onBack }: TimelinePageProps
 
       {/* Video Progress Bar */}
       <div className="card p-4">
-        <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Временная шкала видео</div>
+        <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">{pick(lang, 'Video timeline', 'Временная шкала видео')}</div>
         <div className="relative h-10 bg-white/[0.04] rounded-lg overflow-hidden border border-white/[0.06]">
           {selectedCase.timeline.map((event) => {
             const pct = (event.timeSeconds / totalDurationSeconds) * 100;
@@ -78,10 +80,10 @@ export default function TimelinePage({ selectedCase, onBack }: TimelinePageProps
         </div>
         <div className="flex items-center gap-4 mt-3">
           {[
-            { label: 'Критический', color: '#ef4444' },
-            { label: 'Высокий', color: '#f97316' },
-            { label: 'Средний', color: '#eab308' },
-            { label: 'Низкий', color: '#22c55e' },
+            { label: riskLabel('critical', lang), color: '#ef4444' },
+            { label: riskLabel('high', lang), color: '#f97316' },
+            { label: riskLabel('medium', lang), color: '#eab308' },
+            { label: riskLabel('low', lang), color: '#22c55e' },
           ].map((item) => (
             <div key={item.label} className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
@@ -97,13 +99,13 @@ export default function TimelinePage({ selectedCase, onBack }: TimelinePageProps
         <div className="card p-4 space-y-2">
           <div className="flex items-center gap-2 mb-3">
             <Filter className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Источники</span>
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{pick(lang, 'Sources', 'Источники')}</span>
           </div>
           <button
             onClick={() => setActiveFilter('all')}
             className={`w-full text-left text-xs px-3 py-2 rounded-lg transition-all ${activeFilter === 'all' ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30' : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'}`}
           >
-            Все сигналы ({selectedCase.timeline.length})
+            {pick(lang, 'All signals', 'Все сигналы')} ({selectedCase.timeline.length})
           </button>
           {ALL_SOURCES.map((source) => {
             const count = selectedCase.timeline.filter((e) => e.source === source).length;
@@ -116,20 +118,20 @@ export default function TimelinePage({ selectedCase, onBack }: TimelinePageProps
                 className={`w-full flex items-center gap-2 text-xs px-3 py-2 rounded-lg transition-all ${activeFilter === source ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30' : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'}`}
               >
                 <Icon className="w-3 h-3" />
-                {source}
+                {sourceLabel(source, lang)}
                 <span className="ml-auto text-[10px] font-mono bg-white/[0.06] px-1.5 py-0.5 rounded">{count}</span>
               </button>
             );
           })}
 
           <div className="pt-3 border-t border-white/[0.06]">
-            <div className="text-[10px] font-semibold text-slate-600 uppercase tracking-wider mb-2">Статистика</div>
+            <div className="text-[10px] font-semibold text-slate-600 uppercase tracking-wider mb-2">{pick(lang, 'Statistics', 'Статистика')}</div>
             <div className="space-y-1.5">
               {[
-                { label: 'Критических', value: selectedCase.timeline.filter(e => e.severity === 'critical').length, color: 'text-red-400' },
-                { label: 'Высоких', value: selectedCase.timeline.filter(e => e.severity === 'high').length, color: 'text-orange-400' },
-                { label: 'Средних', value: selectedCase.timeline.filter(e => e.severity === 'medium').length, color: 'text-yellow-400' },
-                { label: 'Низких', value: selectedCase.timeline.filter(e => e.severity === 'low').length, color: 'text-green-400' },
+                { label: pick(lang, 'Critical', 'Критических'), value: selectedCase.timeline.filter(e => e.severity === 'critical').length, color: 'text-red-400' },
+                { label: pick(lang, 'High', 'Высоких'), value: selectedCase.timeline.filter(e => e.severity === 'high').length, color: 'text-orange-400' },
+                { label: pick(lang, 'Medium', 'Средних'), value: selectedCase.timeline.filter(e => e.severity === 'medium').length, color: 'text-yellow-400' },
+                { label: pick(lang, 'Low', 'Низких'), value: selectedCase.timeline.filter(e => e.severity === 'low').length, color: 'text-green-400' },
               ].map((s) => (
                 <div key={s.label} className="flex items-center justify-between text-[10px]">
                   <span className="text-slate-500">{s.label}</span>
@@ -144,7 +146,7 @@ export default function TimelinePage({ selectedCase, onBack }: TimelinePageProps
         <div className="col-span-3 space-y-3">
           {filtered.length === 0 ? (
             <div className="card p-8 text-center text-slate-500 text-sm">
-              Нет сигналов для выбранного фильтра
+              {pick(lang, 'No signals for the selected filter', 'Нет сигналов для выбранного фильтра')}
             </div>
           ) : (
             filtered.map((event, i) => {
@@ -183,15 +185,15 @@ export default function TimelinePage({ selectedCase, onBack }: TimelinePageProps
                         </span>
                         <span className={`badge border text-[10px] ${sourceStyle}`}>
                           <Icon className="w-2.5 h-2.5 mr-1" />
-                          {event.source}
+                          {sourceLabel(event.source, lang)}
                         </span>
                         <span className={`badge border text-[10px] ml-auto ${getRiskBg(event.severity)}`}>
-                          {getRiskLabel(event.severity)}
+                          {riskLabel(event.severity, lang)}
                         </span>
                       </div>
                       <p className="text-sm text-slate-200 leading-relaxed">{event.signal}</p>
                       <div className="flex items-center gap-2 mt-2.5">
-                        <span className="text-[10px] text-slate-500">Уверенность:</span>
+                        <span className="text-[10px] text-slate-500">{pick(lang, 'Confidence:', 'Уверенность:')}</span>
                         <div className="flex-1 h-1 bg-white/[0.06] rounded-full overflow-hidden max-w-24">
                           <div
                             className="h-full rounded-full"

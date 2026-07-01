@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Network, Video, User, Hash, MessageCircle, AlertTriangle, Info } from 'lucide-react';
 import { DemoCase, ConnectionNode, ConnectionEdge } from '../types';
 import { getRiskColor } from '../lib/utils';
+import { useLang, pick } from '../i18n';
 
 interface ConnectionsPageProps {
   selectedCase: DemoCase;
@@ -83,6 +84,7 @@ function buildPositionedNodes(nodes: ConnectionNode[], sourceId: string): Map<st
 }
 
 export default function ConnectionsPage({ selectedCase, onBack }: ConnectionsPageProps) {
+  const { lang } = useLang();
   const { nodes, edges, clusterSize, clusterDescription } = selectedCase.connections;
   const svgRef = useRef<SVGSVGElement>(null);
   const [hoveredEdge, setHoveredEdge] = useState<string | null>(null);
@@ -98,17 +100,17 @@ export default function ConnectionsPage({ selectedCase, onBack }: ConnectionsPag
   };
 
   const typeLegend = [
-    { type: 'video', label: 'Видео', color: '#8b5cf6' },
-    { type: 'account', label: 'Аккаунт', color: '#3b82f6' },
-    { type: 'hashtag', label: 'Хэштег', color: '#06b6d4' },
+    { type: 'video', label: pick(lang, 'Video', 'Видео'), color: '#8b5cf6' },
+    { type: 'account', label: pick(lang, 'Account', 'Аккаунт'), color: '#3b82f6' },
+    { type: 'hashtag', label: pick(lang, 'Hashtag', 'Хэштег'), color: '#06b6d4' },
     { type: 'telegram', label: 'Telegram', color: '#f97316' },
   ];
 
   const edgeLegend = [
-    { type: 'account', label: 'Один аккаунт', color: '#3b82f6' },
-    { type: 'telegram', label: 'Telegram ссылка', color: '#f97316' },
-    { type: 'hashtag', label: 'Общий хэштег', color: '#06b6d4' },
-    { type: 'related', label: 'Связанные', color: '#8b5cf6' },
+    { type: 'account', label: pick(lang, 'Same account', 'Один аккаунт'), color: '#3b82f6' },
+    { type: 'telegram', label: pick(lang, 'Telegram link', 'Telegram ссылка'), color: '#f97316' },
+    { type: 'hashtag', label: pick(lang, 'Shared hashtag', 'Общий хэштег'), color: '#06b6d4' },
+    { type: 'related', label: pick(lang, 'Related', 'Связанные'), color: '#8b5cf6' },
   ];
 
   return (
@@ -123,14 +125,14 @@ export default function ConnectionsPage({ selectedCase, onBack }: ConnectionsPag
             <Network className="w-5 h-5 text-blue-400" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-white">Карта связей</h2>
-            <p className="text-xs text-slate-500">Граф аналитических гипотез</p>
+            <h2 className="text-base font-bold text-white">{pick(lang, 'Connection map', 'Карта связей')}</h2>
+            <p className="text-xs text-slate-500">{pick(lang, 'Graph of analytical hypotheses', 'Граф аналитических гипотез')}</p>
           </div>
         </div>
         <div className="ml-auto flex items-center gap-2">
           <div className="px-3 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center gap-2">
             <AlertTriangle className="w-3.5 h-3.5 text-orange-400" />
-            <span className="text-xs font-medium text-orange-300">Вероятный кластер: {clusterSize} публикаций</span>
+            <span className="text-xs font-medium text-orange-300">{pick(lang, 'Probable cluster', 'Вероятный кластер')}: {clusterSize} {pick(lang, 'publications', 'публикаций')}</span>
           </div>
         </div>
       </div>
@@ -139,7 +141,7 @@ export default function ConnectionsPage({ selectedCase, onBack }: ConnectionsPag
       <div className="flex items-start gap-2 p-3 rounded-xl bg-blue-500/[0.05] border border-blue-500/15">
         <Info className="w-3.5 h-3.5 text-blue-400 mt-0.5 flex-shrink-0" />
         <p className="text-[10px] text-blue-300/80 leading-relaxed">
-          <span className="font-semibold">Аналитическая гипотеза, не обвинение.</span> Карта показывает статистические связи между публикациями. {clusterDescription}.
+          <span className="font-semibold">{pick(lang, 'Analytical hypothesis, not an accusation.', 'Аналитическая гипотеза, не обвинение.')}</span> {pick(lang, 'The map shows statistical links between publications.', 'Карта показывает статистические связи между публикациями.')} {clusterDescription}.
         </p>
       </div>
 
@@ -242,7 +244,7 @@ export default function ConnectionsPage({ selectedCase, onBack }: ConnectionsPag
         {/* Legend & Stats */}
         <div className="space-y-4">
           <div className="card p-4">
-            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Узлы графа</div>
+            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">{pick(lang, 'Graph nodes', 'Узлы графа')}</div>
             <div className="space-y-2">
               {typeLegend.map((item) => {
                 const Icon = nodeIcons[item.type as ConnectionNode['type']];
@@ -262,7 +264,7 @@ export default function ConnectionsPage({ selectedCase, onBack }: ConnectionsPag
           </div>
 
           <div className="card p-4">
-            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Типы связей</div>
+            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">{pick(lang, 'Connection types', 'Типы связей')}</div>
             <div className="space-y-2">
               {edgeLegend.map((item) => (
                 <div key={item.type} className="flex items-center gap-2">
@@ -274,13 +276,13 @@ export default function ConnectionsPage({ selectedCase, onBack }: ConnectionsPag
           </div>
 
           <div className="card p-4">
-            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Метрики кластера</div>
+            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">{pick(lang, 'Cluster metrics', 'Метрики кластера')}</div>
             <div className="space-y-2">
               {[
-                { label: 'Публикаций', value: clusterSize },
-                { label: 'Уникальных связей', value: edges.length },
-                { label: 'Узлов в графе', value: nodes.length },
-                { label: 'Telegram-каналов', value: nodes.filter(n => n.type === 'telegram').length },
+                { label: pick(lang, 'Publications', 'Публикаций'), value: clusterSize },
+                { label: pick(lang, 'Unique links', 'Уникальных связей'), value: edges.length },
+                { label: pick(lang, 'Nodes in graph', 'Узлов в графе'), value: nodes.length },
+                { label: pick(lang, 'Telegram channels', 'Telegram-каналов'), value: nodes.filter(n => n.type === 'telegram').length },
               ].map((m) => (
                 <div key={m.label} className="flex items-center justify-between text-xs">
                   <span className="text-slate-500">{m.label}</span>

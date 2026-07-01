@@ -5,7 +5,8 @@ import {
 import { motion } from 'framer-motion';
 import { ArrowLeft, Dna, Info } from 'lucide-react';
 import { DemoCase } from '../types';
-import { getRiskColor, getRiskBg, getRiskLabel } from '../lib/utils';
+import { getRiskColor, getRiskBg } from '../lib/utils';
+import { useLang, pick, riskLabel, Lang } from '../i18n';
 
 interface ScamDNAPageProps {
   selectedCase: DemoCase;
@@ -26,25 +27,38 @@ const CustomRadarTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-function getSummary(c: DemoCase): string {
+function getSummary(c: DemoCase, lang: Lang): string {
   const top = [...c.scamDNA].sort((a, b) => b.value - a.value).slice(0, 3);
   const topNames = top.map((d) => d.nameRu.toLowerCase());
   if (c.riskScore >= 80) {
-    return `Главный риск этого контента связан не с одним сигналом, а с комбинацией из ${topNames[0]}, ${topNames[1]} и ${topNames[2]}. Именно эта триада характерна для организованных мошеннических схем.`;
+    return pick(
+      lang,
+      `The main risk of this content stems not from a single signal but from a combination of ${topNames[0]}, ${topNames[1]} and ${topNames[2]}. It is precisely this triad that is characteristic of organized fraud schemes.`,
+      `Главный риск этого контента связан не с одним сигналом, а с комбинацией из ${topNames[0]}, ${topNames[1]} и ${topNames[2]}. Именно эта триада характерна для организованных мошеннических схем.`,
+    );
   } else if (c.riskScore >= 50) {
-    return `Контент содержит признаки ${topNames[0]} и ${topNames[1]}, однако несколько индикаторов остаются на низком уровне. Требуется дополнительная ручная проверка.`;
+    return pick(
+      lang,
+      `The content shows signs of ${topNames[0]} and ${topNames[1]}, however several indicators remain at a low level. Additional manual review is required.`,
+      `Контент содержит признаки ${topNames[0]} и ${topNames[1]}, однако несколько индикаторов остаются на низком уровне. Требуется дополнительная ручная проверка.`,
+    );
   }
-  return `Уровень риска низкий. Основные маркеры мошеннических схем не выявлены. Контент соответствует образовательным или информационным материалам.`;
+  return pick(
+    lang,
+    `The risk level is low. The main markers of fraud schemes were not detected. The content matches educational or informational material.`,
+    `Уровень риска низкий. Основные маркеры мошеннических схем не выявлены. Контент соответствует образовательным или информационным материалам.`,
+  );
 }
 
 export default function ScamDNAPage({ selectedCase, onBack }: ScamDNAPageProps) {
+  const { lang } = useLang();
   const data = selectedCase.scamDNA.map((d) => ({
     ...d,
     subject: d.name,
     fullMark: 100,
   }));
 
-  const summary = getSummary(selectedCase);
+  const summary = getSummary(selectedCase, lang);
   const topDimensions = [...selectedCase.scamDNA].sort((a, b) => b.value - a.value);
 
   return (
@@ -60,12 +74,12 @@ export default function ScamDNAPage({ selectedCase, onBack }: ScamDNAPageProps) 
           </div>
           <div>
             <h2 className="text-base font-bold text-white">Scam DNA</h2>
-            <p className="text-xs text-slate-500">Цифровой отпечаток мошеннической схемы</p>
+            <p className="text-xs text-slate-500">{pick(lang, 'Digital fingerprint of the scam scheme', 'Цифровой отпечаток мошеннической схемы')}</p>
           </div>
         </div>
         <div className="ml-auto">
           <span className={`badge border text-sm px-3 py-1 ${getRiskBg(selectedCase.riskLevel)}`}>
-            Risk Score: {selectedCase.riskScore} / 100 · {getRiskLabel(selectedCase.riskLevel)} риск
+            Risk Score: {selectedCase.riskScore} / 100 · {riskLabel(selectedCase.riskLevel, lang)} {pick(lang, 'risk', 'риск')}
           </span>
         </div>
       </div>
@@ -78,7 +92,7 @@ export default function ScamDNAPage({ selectedCase, onBack }: ScamDNAPageProps) 
           transition={{ duration: 0.5 }}
           className="col-span-3 card p-6"
         >
-          <div className="text-sm font-semibold text-white mb-1">Радар рисков</div>
+          <div className="text-sm font-semibold text-white mb-1">{pick(lang, 'Risk Radar', 'Радар рисков')}</div>
           <div className="text-xs text-slate-500 mb-4">{selectedCase.title}</div>
           <ResponsiveContainer width="100%" height={380}>
             <RadarChart cx="50%" cy="50%" outerRadius="72%" data={data}>
@@ -136,7 +150,7 @@ export default function ScamDNAPage({ selectedCase, onBack }: ScamDNAPageProps) 
           >
             <div className="flex items-center gap-2 mb-2">
               <Info className="w-3.5 h-3.5 text-violet-400" />
-              <span className="text-xs font-semibold text-violet-300">AI-интерпретация</span>
+              <span className="text-xs font-semibold text-violet-300">{pick(lang, 'AI interpretation', 'AI-интерпретация')}</span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">{summary}</p>
           </motion.div>
@@ -148,7 +162,7 @@ export default function ScamDNAPage({ selectedCase, onBack }: ScamDNAPageProps) 
             transition={{ delay: 0.3 }}
             className="card p-4 space-y-3"
           >
-            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Измерения риска</div>
+            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{pick(lang, 'Risk dimensions', 'Измерения риска')}</div>
             {topDimensions.map((dim, i) => {
               const color = dim.value >= 80 ? '#ef4444' : dim.value >= 60 ? '#f97316' : dim.value >= 40 ? '#eab308' : '#22c55e';
               return (
@@ -188,7 +202,7 @@ export default function ScamDNAPage({ selectedCase, onBack }: ScamDNAPageProps) 
               transition={{ delay: 0.5 }}
               className="card p-4"
             >
-              <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Обнаруженные хэштеги</div>
+              <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">{pick(lang, 'Detected hashtags', 'Обнаруженные хэштеги')}</div>
               <div className="flex flex-wrap gap-1.5">
                 {selectedCase.hashtags.map((tag) => (
                   <span key={tag} className="text-[10px] px-2 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 font-mono">

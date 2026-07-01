@@ -2,8 +2,8 @@
 
 # 🛡️ AI Media Watch · Sentinel Media AI
 
-**Мультимодальный движок оценки риска мошенничества для коротких видео из соцсетей —
-с собственной обучаемой AI-моделью, объяснимостью и устойчивостью к обходу фильтров.**
+**A multimodal scam-risk engine for short-form social-media video —
+with a custom trainable AI model, explainability, and resilience against filter evasion.**
 
 ![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
@@ -13,145 +13,147 @@
 
 </div>
 
+**English** · [Русский](README.ru.md)
+
 ---
 
-## 🎯 Проблема
+## 🎯 The Problem
 
-Соцсети массово заливаются финансовым мошенничеством — нелегальные онлайн-казино,
-финансовые пирамиды, «инвест-клубы», схемы «пиши + в директ». Цель мошенников —
-люди в поиске заработка, особенно в **RU/KZ**-сегменте. Ручная модерация не
-масштабируется и **не объясняет** свои решения, а простые фильтры по ключевым
-словам легко обходятся обфускацией (`г@рантир0ванный д0ход`, `к а з и н о`).
+Social platforms are flooded with financial fraud — illegal online casinos,
+Ponzi schemes, "investment clubs," "DM me" pitches. Scammers target people
+looking to make money, especially in the **RU/KZ** segment. Manual moderation
+does not scale and **cannot explain** its decisions, while simple keyword
+filters are trivially bypassed with obfuscation (`g@rante3d inc0me`, `c a s i n o`).
 
-## 💡 Решение
+## 💡 The Solution
 
-**AI Media Watch** — это не «бан-автомат», а **инструмент приоритизации**: он
-ранжирует контент по риску, **объясняет каждый сигнал** и ловит даже намеренно
-замаскированные схемы. Финальное решение остаётся за человеком.
+**AI Media Watch** is not a "ban bot" but a **prioritization tool**: it ranks
+content by risk, **explains every signal**, and catches even deliberately
+disguised schemes. The final decision stays with a human.
 
-> Формулировка результата: *«контент содержит признаки, требующие проверки»* — а не
-> автоматическое обвинение.
+> How we phrase the result: *"the content shows indicators that warrant review"* —
+> not an automatic accusation.
 
-## ✨ Ключевые особенности
+## ✨ Key Features
 
 | | |
 |---|---|
-| 🧠 **Собственная AI-модель** | Обучаемая нейросеть (не словарь, не чужой API), обученная **дистилляцией из экспертных правил** + синтетика |
-| 🛡️ **Устойчивость к обходу** | Хеширование символьных n-грамм ловит обфускацию: recall **1.00 vs 0.49** у правил |
-| 🔍 **Объяснимость** | Каждый вердикт раскладывается на **8 осей ScamDNA** + атрибуции признаков + таймлайн + граф связей |
-| 🎚️ **Калибровка + неопределённость** | Честные вероятности (ECE 0.047) + флаг «спорно → на ручную проверку» (active learning) |
-| ⚡ **Тиерный каскад** | Дешёвые текстовые сигналы решают большинство мгновенно; тяжёлый ML — только при сомнении |
-| 🪶 **Lite / Full режимы** | Работает на чистом Python; ML-полосы (Whisper/OCR/CLIP) включаются при наличии зависимостей. Никогда не падает |
+| 🧠 **Custom AI model** | A trainable neural network (not a dictionary, not a third-party API), trained via **distillation from expert rules** + synthetic data |
+| 🛡️ **Evasion resilience** | Character n-gram hashing catches obfuscation: recall **1.00 vs 0.49** for rules |
+| 🔍 **Explainability** | Every verdict decomposes into **8 ScamDNA axes** + feature attributions + timeline + relationship graph |
+| 🎚️ **Calibration + uncertainty** | Honest probabilities (ECE 0.047) + a "disputed → send to manual review" flag (active learning) |
+| ⚡ **Tiered cascade** | Cheap text signals resolve most cases instantly; heavy ML runs only when in doubt |
+| 🪶 **Lite / Full modes** | Runs on pure Python; ML lanes (Whisper/OCR/CLIP) turn on when dependencies are present. Never crashes |
 
-## 🏗️ Архитектура
+## 🏗️ Architecture
 
 ```mermaid
 flowchart LR
-    UI["React-дашборд<br/>(анализ · ScamDNA · таймлайн · граф)"] -->|HTTP| API["FastAPI движок"]
-    API --> CASCADE{"Тиерный каскад"}
-    CASCADE -->|"дёшево, всегда"| CHEAP["Текст · метаданные · ссылки<br/>(лексиконы + правила)"]
-    CASCADE -->|"только при сомнении"| HEAVY["Аудио→Whisper · сэмпл кадров→OCR/CLIP"]
-    CHEAP --> SCORE["Скоринг"]
+    UI["React dashboard<br/>(analysis · ScamDNA · timeline · graph)"] -->|HTTP| API["FastAPI engine"]
+    API --> CASCADE{"Tiered cascade"}
+    CASCADE -->|"cheap, always"| CHEAP["Text · metadata · links<br/>(lexicons + rules)"]
+    CASCADE -->|"only when in doubt"| HEAVY["Audio→Whisper · frame sample→OCR/CLIP"]
+    CHEAP --> SCORE["Scoring"]
     HEAVY --> SCORE
-    SCORE --> RULES["Движок-правила<br/>(учитель)"]
-    SCORE --> MODEL["🧠 AI-модель app.ml<br/>(NumPy MLP)"]
-    RULES --> BLEND["Blend + фолбэк"]
+    SCORE --> RULES["Rule engine<br/>(teacher)"]
+    SCORE --> MODEL["🧠 AI model app.ml<br/>(NumPy MLP)"]
+    RULES --> BLEND["Blend + fallback"]
     MODEL --> BLEND
-    BLEND --> OUT["Risk Score · ScamDNA ·<br/>Evidence · Граф → SQLite"]
+    BLEND --> OUT["Risk Score · ScamDNA ·<br/>Evidence · Graph → SQLite"]
 ```
 
-## 🧠 AI-модель — что это за ИИ
+## 🧠 The AI Model — What Kind of AI This Is
 
-Это **не LLM и не линейная регрессия**, а **собственный многозадачный
-многослойный перцептрон (MLP)**, обученный с нуля на NumPy.
+This is **not an LLM and not linear regression**, but a **custom multi-task
+multi-layer perceptron (MLP)**, trained from scratch on NumPy.
 
 ```mermaid
 flowchart LR
-    IN["Вход ~4128 признаков<br/>4096 хеш. n-грамм + 32 числовых"] --> H["Linear→ReLU→Dropout<br/>(256)"]
-    H --> R["риск (sigmoid)"]
-    H --> D["8 осей ScamDNA (sigmoid)"]
-    H --> C["категория (softmax)"]
+    IN["Input ~4128 features<br/>4096 hashed n-grams + 32 numeric"] --> H["Linear→ReLU→Dropout<br/>(256)"]
+    H --> R["risk (sigmoid)"]
+    H --> D["8 ScamDNA axes (sigmoid)"]
+    H --> C["category (softmax)"]
 ```
 
-- **Обучение:** backpropagation + Adam, потери BCE + cross-entropy + L2.
-- **Дистилляция (weak supervision):** движок-правила = «учитель», размечает данные;
-  нейросеть-«ученик» учится **обобщать за пределы правил**. Плюс синтетика с
-  известными метками и аугментациями (обфускация, перефраз).
-- **Устойчивость к обходу:** `г@рантир0ванный` делит символьные 3-граммы с
-  `гарантированный` → модель узнаёт, хотя точного слова в словаре нет.
-- **Портативность:** обучается на CPU за <1 минуты, артефакт — маленький `.npz`,
-  для инференса нужен только NumPy.
+- **Training:** backpropagation + Adam, losses BCE + cross-entropy + L2.
+- **Distillation (weak supervision):** the rule engine is the "teacher" that labels
+  the data; the student network learns to **generalize beyond the rules**. Plus
+  synthetic data with known labels and augmentations (obfuscation, paraphrase).
+- **Evasion resilience:** `g@rante3d` shares character 3-grams with
+  `guaranteed` → the model recognizes it even though the exact word is not in any dictionary.
+- **Portability:** trains on CPU in <1 minute, the artifact is a tiny `.npz`,
+  and inference needs only NumPy.
 
-Подробности — в [`backend/app/ml/DESIGN.md`](backend/app/ml/DESIGN.md) и
+Details are in [`backend/app/ml/DESIGN.md`](backend/app/ml/DESIGN.md) and
 [`backend/models_store/MODEL_CARD.md`](backend/models_store/MODEL_CARD.md).
 
-## 📊 Результаты
+## 📊 Results
 
-На held-out выборке (1208 примеров: 583 скам / 625 безопасных / 733 обфусцированных):
+On a held-out set (1208 examples: 583 scam / 625 safe / 733 obfuscated):
 
-| Метрика | 🧠 Модель | 📜 Правила (учитель) |
+| Metric | 🧠 Model | 📜 Rules (teacher) |
 |---|---|---|
 | AUROC | **0.9999** | 0.962 |
 | F1 | **0.938** | 0.666 |
 | Recall | **1.00** | 0.50 |
-| ECE (калибровка) | **0.047** | 0.219 |
-| Точность категории | **98.5 %** | — |
-| Ошибка по 8 осям (MAE) | **0.017** | — |
+| ECE (calibration) | **0.047** | 0.219 |
+| Category accuracy | **98.5 %** | — |
+| Error across 8 axes (MAE) | **0.017** | — |
 
-**🎯 Главное — обфускация:** на замаскированных скамах модель даёт recall
-**1.00 против 0.49** у правил (**+0.51**) — то, ради чего всё затевалось.
+**🎯 The key point — obfuscation:** on disguised scams the model delivers recall
+**1.00 versus 0.49** for rules (**+0.51**) — exactly what this was built for.
 
-> ⚠️ Метрики получены на **синтетических данных** (cold-start без разметки через
-> дистилляцию). На реальных данных будут скромнее — но превосходство над правилами
-> на обфускации показательно. Валидация на реальных кейсах — в дорожной карте.
+> ⚠️ Metrics were obtained on **synthetic data** (a cold start with no labels, via
+> distillation). On real data they will be more modest — but the edge over rules
+> on obfuscation is telling. Validation on real cases is on the roadmap.
 
-## 🛠️ Технологии
+## 🛠️ Tech Stack
 
-| Слой | Стек |
+| Layer | Stack |
 |---|---|
-| Фронтенд | React 18, Vite, TypeScript, Tailwind, Framer Motion, Recharts |
-| Бэкенд | Python 3.13, FastAPI, Pydantic v2, Uvicorn |
-| Модель риска | NumPy (MLP с нуля), feature hashing (blake2b), temperature scaling |
-| Извлечение (опц.) | Whisper / faster-whisper (ASR), Tesseract (OCR), CLIP / open-clip (визуал), ffmpeg |
-| Хранение | SQLite |
+| Frontend | React 18, Vite, TypeScript, Tailwind, Framer Motion, Recharts |
+| Backend | Python 3.13, FastAPI, Pydantic v2, Uvicorn |
+| Risk model | NumPy (MLP from scratch), feature hashing (blake2b), temperature scaling |
+| Extraction (opt.) | Whisper / faster-whisper (ASR), Tesseract (OCR), CLIP / open-clip (vision), ffmpeg |
+| Storage | SQLite |
 
-## 🚀 Запуск
+## 🚀 Getting Started
 
-**Требования:** [Python 3.13+](https://python.org), [Node.js 18+](https://nodejs.org).
+**Requirements:** [Python 3.13+](https://python.org), [Node.js 18+](https://nodejs.org).
 
-### 1. Бэкенд (движок)
+### 1. Backend (engine)
 ```bash
 cd backend
 python -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements.txt   # Windows
-# затем:
+# then:
 .venv\Scripts\python.exe -m uvicorn app.main:app --port 8000
 ```
-→ API + интерактивный Swagger: **http://localhost:8000/docs**
+→ API + interactive Swagger: **http://localhost:8000/docs**
 
-### 2. Фронтенд (дашборд)
+### 2. Frontend (dashboard)
 ```bash
 npm install
 npm run dev
 ```
 → **http://localhost:5173**
 
-### 3. (Опц.) Переобучить модель
+### 3. (Opt.) Retrain the model
 ```bash
 cd backend
-.venv\Scripts\python.exe -m app.ml.cli train       # генерирует данные + обучает на CPU
-.venv\Scripts\python.exe -m app.ml.cli evaluate    # метрики + MODEL_CARD.md
+.venv\Scripts\python.exe -m app.ml.cli train       # generates data + trains on CPU
+.venv\Scripts\python.exe -m app.ml.cli evaluate    # metrics + MODEL_CARD.md
 .venv\Scripts\python.exe -m app.ml.cli predict --text "Г@рантир0ванный д0ход, казино"
 ```
 
 ## 🔌 API
 
-| Метод | Эндпоинт | Описание |
+| Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/health` | Статус движка + доступные ML-полосы |
-| `POST` | `/api/analyze` | Анализ загруженного видео (multipart) |
-| `POST` | `/api/analyze/url` | Анализ по метаданным/субтитрам (без скачивания) |
-| `GET` | `/api/cases` | Проанализированные кейсы |
+| `GET` | `/api/health` | Engine status + available ML lanes |
+| `POST` | `/api/analyze` | Analyze an uploaded video (multipart) |
+| `POST` | `/api/analyze/url` | Analyze by metadata/captions (no download) |
+| `GET` | `/api/cases` | Analyzed cases |
 
 ```bash
 curl -X POST http://localhost:8000/api/analyze/url \
@@ -159,50 +161,50 @@ curl -X POST http://localhost:8000/api/analyze/url \
   -d '{"title":"Заработок на слотах","description":"Гарантированный доход, пиши в директ","hashtags":"#казино"}'
 ```
 
-## ⚖️ Этика и ответственный ИИ
+## ⚖️ Ethics and Responsible AI
 
-- **Риск-ориентированность:** высокий балл = повод проверить, не доказанное нарушение.
-- **Человек в контуре:** спорные кейсы (флаг неуверенности) уходят на ручную проверку.
-- **Приватность:** система не хранит персональные данные пользователей.
-- **Без авто-приговоров:** никаких юридических заключений — только приоритизация.
+- **Risk-oriented:** a high score is a reason to review, not a proven violation.
+- **Human in the loop:** disputed cases (the uncertainty flag) are routed to manual review.
+- **Privacy:** the system does not store users' personal data.
+- **No auto-verdicts:** no legal conclusions — only prioritization.
 
-## 🗺️ Дорожная карта
+## 🗺️ Roadmap
 
-- [ ] Сбор и разметка **реальных** данных → дообучение и честная валидация
-- [ ] Полный медиа-пайплайн в проде (ASR/OCR/CLIP на GPU-воркерах)
-- [ ] Обучение трансформер-варианта ([`model_torch.py`](backend/app/ml/model_torch.py)) на масштабе
-- [ ] Прод-инфраструктура: Docker + PostgreSQL + очередь задач + S3
-- [ ] Loop активного обучения через дашборд аналитика
+- [ ] Collect and label **real** data → fine-tuning and honest validation
+- [ ] Full media pipeline in production (ASR/OCR/CLIP on GPU workers)
+- [ ] Train a transformer variant ([`model_torch.py`](backend/app/ml/model_torch.py)) at scale
+- [ ] Production infrastructure: Docker + PostgreSQL + task queue + S3
+- [ ] Active-learning loop through the analyst dashboard
 
-## ⚠️ Ограничения (честно)
+## ⚠️ Limitations (honestly)
 
-- Метрики на синтетике — реальная производительность ещё не подтверждена.
-- В MVP движок анализирует загруженный файл / метаданные, а не качает видео из соцсетей (ToS + скорость).
-- Категоризация иногда неточна (общий риск верный, ярлык категории может ошибаться).
+- Metrics are on synthetic data — real-world performance is not yet confirmed.
+- In the MVP the engine analyzes an uploaded file / metadata rather than downloading video from social platforms (ToS + speed).
+- Categorization is sometimes imprecise (overall risk is correct, the category label may be wrong).
 
-## 📁 Структура
+## 📁 Structure
 
 ```
 .
-├── src/                    # React-фронтенд (дашборд)
+├── src/                    # React frontend (dashboard)
 ├── backend/
 │   ├── app/
-│   │   ├── pipeline/       # каскад + оркестратор
-│   │   ├── analyzers/      # ASR / OCR / vision / текст / поведение / ссылки
-│   │   ├── scoring/        # ScamDNA · Risk Score · категория · timeline · evidence
-│   │   ├── ml/             # 🧠 собственная модель (featurize, model_np, train, ...)
-│   │   ├── store/          # SQLite + база знаний + граф
-│   │   └── api/            # FastAPI роуты + схемы
-│   ├── models_store/       # обученный артефакт + MODEL_CARD.md
-│   └── README.md           # подробная документация движка
-└── README.md               # этот файл
+│   │   ├── pipeline/       # cascade + orchestrator
+│   │   ├── analyzers/      # ASR / OCR / vision / text / behavior / links
+│   │   ├── scoring/        # ScamDNA · Risk Score · category · timeline · evidence
+│   │   ├── ml/             # 🧠 custom model (featurize, model_np, train, ...)
+│   │   ├── store/          # SQLite + knowledge base + graph
+│   │   └── api/            # FastAPI routes + schemas
+│   ├── models_store/       # trained artifact + MODEL_CARD.md
+│   └── README.md           # detailed engine documentation
+└── README.md               # this file
 ```
 
 ---
 
 <div align="center">
 
-*Мы не баним за вас — мы за секунды показываем аналитику, **что** подозрительно и
-**почему**, и ловим даже то, что специально маскируют под обход фильтров.*
+*We don't ban on your behalf — in seconds we show analysts **what** is suspicious and
+**why**, and we catch even what was deliberately disguised to slip past filters.*
 
 </div>
